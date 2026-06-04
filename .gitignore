@@ -1,0 +1,4 @@
+kaker.db
+__pycache__/
+.env
+config.js

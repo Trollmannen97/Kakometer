@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Kakometer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #fff1f8, #f7e7ff);
+      color: #2b1b2f;
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      margin: 0;
+      font-family: Georgia, serif;
+    }
+
+    .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.8;
+      margin-top: 8px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 850px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255, 255, 255, 0.9);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(120, 61, 120, 0.15);
+    }
+
+    .barometer-card {
+      text-align: center;
+    }
+
+    .barometer-title {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+      font-weight: 800;
+    }
+
+    .barometer {
+      width: 100%;
+      height: 36px;
+      background: #eee;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 3px solid #2b1b2f;
+      margin: 20px 0 12px;
+    }
+
+    .barometer-fill {
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, #ff4d6d, #ffb703, #70e000);
+      border-radius: 999px;
+      transition: width 0.8s ease;
+    }
+
+    .barometer-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 700;
+      opacity: 0.75;
+    }
+
+    .score {
+      font-size: 3rem;
+      font-weight: 900;
+      margin: 16px 0 4px;
+    }
+
+    .mood {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .cake-stage {
+      min-height: 340px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cake {
+      font-size: 120px;
+      transition: transform 0.8s ease;
+      filter: drop-shadow(0 20px 18px rgba(0, 0, 0, 0.18));
+      animation: cakeFloat 2.5s ease-in-out infinite;
+    }
+
+    @keyframes cakeFloat {
+      0%, 100% {
+        transform: translateY(0) scale(var(--cake-scale));
+      }
+
+      50% {
+        transform: translateY(-10px) scale(var(--cake-scale));
+      }
+    }
+
+    .cake-note {
+      text-align: center;
+      font-weight: 700;
+      margin-top: -20px;
+      opacity: 0.85;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 850px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 550px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stat-box {
+      background: #fff;
+      border-radius: 22px;
+      padding: 18px;
+      text-align: center;
+      border: 2px dashed #e4badb;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 900;
+    }
+
+    .stat-label {
+      opacity: 0.75;
+      margin-top: 4px;
+      font-size: 0.9rem;
+    }
+
+    .quote {
+      margin-top: 18px;
+      background: #2b1b2f;
+      color: white;
+      border-radius: 20px;
+      padding: 18px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .form-card {
+      margin-top: 24px;
+    }
+
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 1fr auto;
+      gap: 12px;
+    }
+
+    @media (max-width: 850px) {
+      form {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    input,
+    select,
+    button {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 2px solid #e8c5df;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    button {
+      background: #2b1b2f;
+      color: white;
+      cursor: pointer;
+      font-weight: 800;
+      border: none;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    .danger-button {
+      background: #b0003a;
+      margin-top: 12px;
+    }
+
+    .delete-cake-button {
+      background: #ff4d6d;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .delete-cake-button:hover {
+      transform: scale(1.05);
+      opacity: 0.9;
+    }
+
+    .table-card {
+      margin-top: 24px;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 18px;
+    }
+
+    th,
+    td {
+      padding: 14px;
+      text-align: left;
+      border-bottom: 1px solid #f0d8ec;
+    }
+
+    th {
+      background: #f1d5ea;
+      color: #5d3264;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    tr {
+      background: rgba(255, 255, 255, 0.7);
+    }
+
+    tr:hover {
+      background: #fff5fc;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      display: inline-block;
+      white-space: nowrap;
+    }
+
+    .good {
+      background: #d8f8d8;
+      color: #167a16;
+    }
+
+    .bad {
+      background: #ffe0e9;
+      color: #b0003a;
+    }
+
+    .mini-text {
+      font-size: 0.85rem;
+      opacity: 0.7;
+      margin-top: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 24px;
+      opacity: 0.7;
+      font-weight: 700;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>Kakometer</h1>
+      <p class="subtitle">Én kake til, så blir det bedre.</p>
+    </header>
+
+    <section class="grid">
+      <div class="card barometer-card">
+        <div class="barometer-title">Iselin-er-fornøyd-barometer</div>
+
+        <div class="score" id="scoreText">0%</div>
+        <div class="mood" id="moodText">Beregner kakehumør...</div>
+
+        <div class="barometer">
+          <div class="barometer-fill" id="barometerFill"></div>
+        </div>
+
+        <div class="barometer-labels">
+          <span>Marsipankake-krise</span>
+          <span>Full kakeharmoni</span>
+        </div>
+
+        <div class="quote" id="quoteText">
+          Laster inn Iselin Garseg-statistikk...
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="cake-stage">
+          <div class="cake" id="cakeEmoji">🎂</div>
+        </div>
+
+        <p class="cake-note" id="cakeNote">
+          Kaken vokser for hver registrerte kake.
+        </p>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat-box">
+        <div class="stat-number" id="totalCakes">0</div>
+        <div class="stat-label">kaker totalt</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-number" id="marzipanCount">0</div>
+        <div class="stat-label">marsipankaker</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-number" id="cakeFrequency">0</div>
+        <div class="stat-label">dager per kake</div>
+      </div>
+
+    </section>
+
+    <section class="card form-card">
+      <h2>Legg til ny kake</h2>
+
+      <form id="cakeForm">
+        <input type="date" id="dateInput" required />
+
+        <input
+          type="text"
+          id="reasonInput"
+          placeholder="Årsak, f.eks. bursdag, lønn, ren kakeplikt"
+          required
+        />
+
+        <select id="cakeTypeInput" required>
+          <option value="">Velg kake</option>
+          <option value="Marsipankake">Marsipankake</option>
+          <option value="Sjokoladekake">Sjokoladekake</option>
+          <option value="Kladdkake">Kladdkake</option>
+          <option value="Ostekake">Ostekake</option>
+          <option value="Gulrotkake">Gulrotkake</option>
+          <option value="Pavlova">Pavlova</option>
+          <option value="Brownies">Brownies</option>
+          <option value="Annet">Annet</option>
+        </select>
+
+        <button type="submit">Registrer kake</button>
+      </form>
+
+      <button class="danger-button" id="resetButton">
+        Nullstill testdata
+      </button>
+
+      <p class="mini-text">
+        Data lagres i Supabase, slik at flere kan bruke samme kakelogg.
+      </p>
+    </section>
+
+    <section class="card table-card">
+      <h2>Kakelogg</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Dato</th>
+            <th>Årsak</th>
+            <th>Kake</th>
+            <th>Effekt på Iselin</th>
+            <th>Slett</th>
+          </tr>
+        </thead>
+
+        <tbody id="cakeTableBody"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+
+  <script>
+    const SUPABASE_URL = window.KAKOMETER_CONFIG?.SUPABASE_URL || "";
+    const SUPABASE_ANON_KEY = window.KAKOMETER_CONFIG?.SUPABASE_ANON_KEY || "";
+    const supabaseReady = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+    const supabaseClient = supabaseReady
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    const defaultCakeData = [
+      {
+        id: "cake-1",
+        date: "2026-01-30",
+        reason: "Martin på Outlet slutter",
+        type: "Marsipankake"
+      },
+      {
+        id: "cake-2",
+        date: "2026-02-26",
+        reason: "Bursdag",
+        type: "Sjokoladekake"
+      },
+      {
+        id: "cake-3",
+        date: "2026-05-11",
+        reason: "Sebastian 30 år",
+        type: "Marsipankake"
+      },
+      {
+        id: "cake-4",
+        date: "2026-05-19",
+        reason: "Rester fra Mattias 17. mai",
+        type: "Kladdkake"
+      },
+      {
+        id: "cake-5",
+        date: "2026-05-29",
+        reason: "Bastian 30 år",
+        type: "Marsipankake"
+      },
+      {
+        id: "cake-6",
+        date: "2026-06-08",
+        reason: "Magnus fagbrev",
+        type: "Sjokoladekake"
+      }
+    ];
+
+    let cakes = [];
+
+    const barometerFill = document.getElementById("barometerFill");
+    const scoreText = document.getElementById("scoreText");
+    const moodText = document.getElementById("moodText");
+    const quoteText = document.getElementById("quoteText");
+    const cakeEmoji = document.getElementById("cakeEmoji");
+    const cakeNote = document.getElementById("cakeNote");
+
+    const totalCakes = document.getElementById("totalCakes");
+    const marzipanCount = document.getElementById("marzipanCount");
+    const cakeFrequency = document.getElementById("cakeFrequency");
+    const cakeTableBody = document.getElementById("cakeTableBody");
+
+    const cakeForm = document.getElementById("cakeForm");
+    const dateInput = document.getElementById("dateInput");
+    const reasonInput = document.getElementById("reasonInput");
+    const cakeTypeInput = document.getElementById("cakeTypeInput");
+    const resetButton = document.getElementById("resetButton");
+
+    dateInput.valueAsDate = new Date();
+
+    function createId() {
+      if (window.crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+
+      return "cake-" + Date.now() + "-" + Math.floor(Math.random() * 100000);
+    }
+
+    function escapeHtml(value) {
+      const element = document.createElement("div");
+      element.textContent = value;
+      return element.innerHTML;
+    }
+
+    async function loadCakes() {
+      if (!supabaseClient) {
+        throw new Error("Supabase URL og anon key mangler. Kjør build-config eller sjekk GitHub Secrets.");
+      }
+
+      const { data, error } = await supabaseClient
+        .from("cakes")
+        .select("id, date, reason, type")
+        .order("date", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      cakes = data || [];
+      renderDashboard();
+    }
+
+    function isMarzipanCake(type) {
+      return type.toLowerCase().includes("marsipan");
+    }
+
+    function calculateBarometer() {
+      let score = 50;
+
+      cakes.forEach((cake) => {
+        if (isMarzipanCake(cake.type)) {
+          score -= 12;
+        } else {
+          score += 8;
+        }
+      });
+
+      return Math.max(0, Math.min(100, score));
+    }
+
+    function getMood(score) {
+      if (score <= 20) {
+        return "Kritisk marsipannivå. Send sjokoladekake umiddelbart.";
+      }
+
+      if (score <= 40) {
+        return "Iselin later som hun er fornøyd, men vi vet bedre.";
+      }
+
+      if (score <= 60) {
+        return "Stabilt, men kakepolitikken kan forbedres.";
+      }
+
+      if (score <= 80) {
+        return "God stemning. Kakekontoret leverer.";
+      }
+
+      return "Ekstase. Iselin vurderer å nominere dere til kakepris.";
+    }
+
+    function getQuote(score, marzipanAmount, total) {
+      const marzipanPercent = total === 0
+        ? 0
+        : Math.round((marzipanAmount / total) * 100);
+
+      if (total === 0) {
+        return "Av Iselin Garseg: Ingen kake registrert. Dette er ikke statistikk. Dette er en nødssituasjon.";
+      }
+
+      if (marzipanPercent >= 50) {
+        return "Av Iselin Garseg: Altfor mye marsipan. Dette må tas opp i neste medarbeidersamtale.";
+      }
+
+      if (score >= 75) {
+        return "Av Iselin Garseg: Dette er ikke bare kake. Dette er kulturbygging.";
+      }
+
+      if (score <= 35) {
+        return "Av Iselin Garseg: Jeg sier ikke at marsipankake er feil, men statistikken lyver ikke.";
+      }
+
+      return "Av Iselin Garseg: Foreløpig akseptabel kakeføring, men forbedringspotensialet er betydelig.";
+    }
+
+    function calculateCakeFrequency() {
+      if (cakes.length < 2) {
+        return "-";
+      }
+
+      const sortedDates = cakes
+        .map((cake) => new Date(cake.date))
+        .sort((a, b) => a - b);
+
+      const firstDate = sortedDates[0];
+      const lastDate = sortedDates[sortedDates.length - 1];
+
+      const diffMs = lastDate - firstDate;
+      const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+
+      const frequency = diffDays / cakes.length;
+
+      return frequency.toFixed(1);
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+
+      return date.toLocaleDateString("no-NO", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric"
+      });
+    }
+
+    function renderTable() {
+      cakeTableBody.innerHTML = "";
+
+      if (cakes.length === 0) {
+        cakeTableBody.innerHTML = `
+          <tr>
+            <td colspan="5" class="empty-state">
+              Ingen kaker registrert. Dette er dramatisk.
+            </td>
+          </tr>
+        `;
+
+        return;
+      }
+
+      const sortedCakes = [...cakes].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      sortedCakes.forEach((cake) => {
+        const marzipan = isMarzipanCake(cake.type);
+
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${formatDate(cake.date)}</td>
+          <td>${escapeHtml(cake.reason)}</td>
+          <td>${escapeHtml(cake.type)}</td>
+          <td>
+            <span class="badge ${marzipan ? "bad" : "good"}">
+              ${marzipan ? "Iselin ned 📉" : "Iselin opp 📈"}
+            </span>
+          </td>
+          <td>
+            <button class="delete-cake-button" data-id="${cake.id}">
+              Slett
+            </button>
+          </td>
+        `;
+
+        cakeTableBody.appendChild(row);
+      });
+
+      const deleteButtons = document.querySelectorAll(".delete-cake-button");
+
+      deleteButtons.forEach((button) => {
+        button.addEventListener("click", function () {
+          const id = this.dataset.id;
+          deleteCake(id);
+        });
+      });
+    }
+
+    async function deleteCake(id) {
+      const cakeToDelete = cakes.find((cake) => cake.id === id);
+
+      if (!cakeToDelete) {
+        return;
+      }
+
+      const confirmDelete = confirm(
+        `Vil du slette "${cakeToDelete.type}" fra kakeloggen?`
+      );
+
+      if (!confirmDelete) {
+        return;
+      }
+
+      try {
+        const { error } = await supabaseClient
+          .from("cakes")
+          .delete()
+          .eq("id", id);
+
+        if (error) {
+          throw error;
+        }
+
+        await loadCakes();
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    function renderDashboard() {
+      const total = cakes.length;
+      const marzipanAmount = cakes.filter((cake) => isMarzipanCake(cake.type)).length;
+
+      const score = calculateBarometer();
+      const frequency = calculateCakeFrequency();
+
+      barometerFill.style.width = `${score}%`;
+      scoreText.textContent = `${score}%`;
+      moodText.textContent = getMood(score);
+      quoteText.textContent = getQuote(score, marzipanAmount, total);
+
+      totalCakes.textContent = total;
+      marzipanCount.textContent = marzipanAmount;
+      cakeFrequency.textContent = frequency;
+
+      const cakeScale = 1 + total * 0.08;
+      cakeEmoji.style.setProperty("--cake-scale", cakeScale);
+      cakeNote.textContent = `Kontorkaken er nå ${cakeScale.toFixed(2)}x større enn ved start. Dette er vitenskapelig nok.`;
+
+      renderTable();
+    }
+
+    cakeForm.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const newCake = {
+        id: createId(),
+        date: dateInput.value,
+        reason: reasonInput.value,
+        type: cakeTypeInput.value
+      };
+
+      try {
+        const { error } = await supabaseClient
+          .from("cakes")
+          .insert(newCake);
+
+        if (error) {
+          throw error;
+        }
+
+        reasonInput.value = "";
+        cakeTypeInput.value = "";
+        dateInput.valueAsDate = new Date();
+
+        await loadCakes();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    resetButton.addEventListener("click", async function () {
+      const confirmReset = confirm(
+        "Vil du nullstille testdata og gå tilbake til startdata?"
+      );
+
+      if (!confirmReset) {
+        return;
+      }
+
+      try {
+        const { error: deleteError } = await supabaseClient
+          .from("cakes")
+          .delete()
+          .neq("id", "");
+
+        if (deleteError) {
+          throw deleteError;
+        }
+
+        const { error: insertError } = await supabaseClient
+          .from("cakes")
+          .insert(defaultCakeData);
+
+        if (insertError) {
+          throw insertError;
+        }
+
+        await loadCakes();
+      } catch (error) {
+        alert(error.message);
+      }
+    });
+
+    loadCakes().catch((error) => {
+      cakeTableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="empty-state">
+            Klarte ikke å koble til Supabase: ${escapeHtml(error.message)}
+          </td>
+        </tr>
+      `;
+    });
+  </script>
+</body>
+</html>
