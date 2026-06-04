@@ -51,4 +51,3 @@ I repoets Pages-innstillinger bør Source settes til GitHub Actions.
 Supabase `anon public` key er ment å brukes i nettleseren, så den blir synlig for brukere av nettsiden selv om den kommer fra `.env`/GitHub Secrets. Sikkerheten må derfor ligge i Supabase Row Level Security policies.
 
 Oppsettet i `supabase-schema.sql` lar alle som kan åpne siden lese, legge til og slette kaker. Hvis siden skal være offentlig, bør neste steg være Supabase Auth eller en liten serverless-funksjon med passordbeskyttet skriving.
-# Kakometer

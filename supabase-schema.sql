@@ -3,8 +3,12 @@ create table if not exists public.cakes (
   date date not null,
   reason text not null,
   type text not null,
+  amount integer not null default 1 check (amount > 0),
   created_at timestamptz not null default now()
 );
+
+alter table public.cakes
+add column if not exists amount integer not null default 1 check (amount > 0);
 
 alter table public.cakes enable row level security;
 
@@ -29,12 +33,12 @@ for delete
 to anon
 using (true);
 
-insert into public.cakes (id, date, reason, type)
+insert into public.cakes (id, date, reason, type, amount)
 values
-  ('cake-1', '2026-01-30', 'Martin på Outlet slutter', 'Marsipankake'),
-  ('cake-2', '2026-02-26', 'Bursdag', 'Sjokoladekake'),
-  ('cake-3', '2026-05-11', 'Sebastian 30 år', 'Marsipankake'),
-  ('cake-4', '2026-05-19', 'Rester fra Mattias 17. mai', 'Kladdkake'),
-  ('cake-5', '2026-05-29', 'Bastian 30 år', 'Marsipankake'),
-  ('cake-6', '2026-06-08', 'Magnus fagbrev', 'Sjokoladekake')
+  ('cake-1', '2026-01-30', 'Martin på Outlet slutter', 'Marsipankake', 1),
+  ('cake-2', '2026-02-26', 'Bursdag', 'Sjokoladekake', 1),
+  ('cake-3', '2026-05-11', 'Sebastian 30 år', 'Marsipankake', 1),
+  ('cake-4', '2026-05-19', 'Rester fra Mattias 17. mai', 'Kladdkake', 1),
+  ('cake-5', '2026-05-29', 'Bastian 30 år', 'Marsipankake', 1),
+  ('cake-6', '2026-06-08', 'Magnus fagbrev', 'Sjokoladekake', 1)
 on conflict (id) do nothing;

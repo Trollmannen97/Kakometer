@@ -198,7 +198,7 @@
 
     form {
       display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr auto;
+      grid-template-columns: 1fr 1.5fr 1fr 0.7fr auto;
       gap: 12px;
     }
 
@@ -405,6 +405,17 @@
           <option value="Annet">Annet</option>
         </select>
 
+        <input
+          type="number"
+          id="amountInput"
+          min="1"
+          step="1"
+          value="1"
+          placeholder="Antall"
+          aria-label="Antall kaker"
+          required
+        />
+
         <button type="submit">Registrer kake</button>
       </form>
 
@@ -426,6 +437,7 @@
             <th>Dato</th>
             <th>Årsak</th>
             <th>Kake</th>
+            <th>Antall</th>
             <th>Effekt på Iselin</th>
             <th>Slett</th>
           </tr>
@@ -452,37 +464,43 @@
         id: "cake-1",
         date: "2026-01-30",
         reason: "Martin på Outlet slutter",
-        type: "Marsipankake"
+        type: "Marsipankake",
+        amount: 1
       },
       {
         id: "cake-2",
         date: "2026-02-26",
         reason: "Bursdag",
-        type: "Sjokoladekake"
+        type: "Sjokoladekake",
+        amount: 1
       },
       {
         id: "cake-3",
         date: "2026-05-11",
         reason: "Sebastian 30 år",
-        type: "Marsipankake"
+        type: "Marsipankake",
+        amount: 1
       },
       {
         id: "cake-4",
         date: "2026-05-19",
         reason: "Rester fra Mattias 17. mai",
-        type: "Kladdkake"
+        type: "Kladdkake",
+        amount: 1
       },
       {
         id: "cake-5",
         date: "2026-05-29",
         reason: "Bastian 30 år",
-        type: "Marsipankake"
+        type: "Marsipankake",
+        amount: 1
       },
       {
         id: "cake-6",
         date: "2026-06-08",
         reason: "Magnus fagbrev",
-        type: "Sjokoladekake"
+        type: "Sjokoladekake",
+        amount: 1
       }
     ];
 
@@ -504,6 +522,7 @@
     const dateInput = document.getElementById("dateInput");
     const reasonInput = document.getElementById("reasonInput");
     const cakeTypeInput = document.getElementById("cakeTypeInput");
+    const amountInput = document.getElementById("amountInput");
     const resetButton = document.getElementById("resetButton");
 
     dateInput.valueAsDate = new Date();
@@ -529,7 +548,7 @@
 
       const { data, error } = await supabaseClient
         .from("cakes")
-        .select("id, date, reason, type")
+        .select("id, date, reason, type, amount")
         .order("date", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -549,10 +568,12 @@
       let score = 50;
 
       cakes.forEach((cake) => {
+        const amount = Number(cake.amount) || 1;
+
         if (isMarzipanCake(cake.type)) {
-          score -= 12;
+          score -= 12 * amount;
         } else {
-          score += 8;
+          score += 8 * amount;
         }
       });
 
@@ -604,7 +625,9 @@
     }
 
     function calculateCakeFrequency() {
-      if (cakes.length < 2) {
+      const totalAmount = getTotalCakeAmount();
+
+      if (totalAmount < 2 || cakes.length < 2) {
         return "-";
       }
 
@@ -618,9 +641,17 @@
       const diffMs = lastDate - firstDate;
       const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 
-      const frequency = diffDays / cakes.length;
+      const frequency = diffDays / totalAmount;
 
       return frequency.toFixed(1);
+    }
+
+    function getCakeAmount(cake) {
+      return Math.max(1, Number(cake.amount) || 1);
+    }
+
+    function getTotalCakeAmount() {
+      return cakes.reduce((sum, cake) => sum + getCakeAmount(cake), 0);
     }
 
     function formatDate(dateString) {
@@ -639,7 +670,7 @@
       if (cakes.length === 0) {
         cakeTableBody.innerHTML = `
           <tr>
-            <td colspan="5" class="empty-state">
+            <td colspan="6" class="empty-state">
               Ingen kaker registrert. Dette er dramatisk.
             </td>
           </tr>
@@ -659,6 +690,7 @@
           <td>${formatDate(cake.date)}</td>
           <td>${escapeHtml(cake.reason)}</td>
           <td>${escapeHtml(cake.type)}</td>
+          <td>${getCakeAmount(cake)}</td>
           <td>
             <span class="badge ${marzipan ? "bad" : "good"}">
               ${marzipan ? "Iselin ned 📉" : "Iselin opp 📈"}
@@ -716,8 +748,10 @@
     }
 
     function renderDashboard() {
-      const total = cakes.length;
-      const marzipanAmount = cakes.filter((cake) => isMarzipanCake(cake.type)).length;
+      const total = getTotalCakeAmount();
+      const marzipanAmount = cakes
+        .filter((cake) => isMarzipanCake(cake.type))
+        .reduce((sum, cake) => sum + getCakeAmount(cake), 0);
 
       const score = calculateBarometer();
       const frequency = calculateCakeFrequency();
@@ -745,7 +779,8 @@
         id: createId(),
         date: dateInput.value,
         reason: reasonInput.value,
-        type: cakeTypeInput.value
+        type: cakeTypeInput.value,
+        amount: Math.max(1, Number(amountInput.value) || 1)
       };
 
       try {
@@ -759,6 +794,7 @@
 
         reasonInput.value = "";
         cakeTypeInput.value = "";
+        amountInput.value = "1";
         dateInput.valueAsDate = new Date();
 
         await loadCakes();
@@ -803,7 +839,7 @@
     loadCakes().catch((error) => {
       cakeTableBody.innerHTML = `
         <tr>
-          <td colspan="5" class="empty-state">
+          <td colspan="6" class="empty-state">
             Klarte ikke å koble til Supabase: ${escapeHtml(error.message)}
           </td>
         </tr>
