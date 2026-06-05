@@ -217,14 +217,54 @@
     }
 
     form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-main-fields,
+    .cake-line {
       display: grid;
-      grid-template-columns: 1fr 1.5fr 1fr 0.7fr auto;
       gap: 12px;
     }
 
+    .form-main-fields {
+      grid-template-columns: 1fr 2fr;
+    }
+
+    .cake-line {
+      grid-template-columns: 1fr 0.45fr auto;
+      align-items: center;
+    }
+
+    .cake-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .secondary-button {
+      background: #fff;
+      color: #2b1b2f;
+      border: 2px solid #e8c5df;
+    }
+
+    .remove-cake-line-button {
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      padding: 0;
+      background: #ff4d6d;
+    }
+
     @media (max-width: 850px) {
-      form {
+      .form-main-fields,
+      .cake-line {
         grid-template-columns: 1fr;
+      }
+
+      .remove-cake-line-button {
+        width: 100%;
       }
     }
 
@@ -333,6 +373,11 @@
       color: #5d3264;
     }
 
+    .mixed {
+      background: #fff0c2;
+      color: #7a4f00;
+    }
+
     .mini-text {
       font-size: 0.85rem;
       opacity: 0.7;
@@ -433,39 +478,22 @@
       <h2>Legg til ny kake</h2>
 
       <form id="cakeForm">
-        <input type="date" id="dateInput" required />
+        <div class="form-main-fields">
+          <input type="date" id="dateInput" required />
 
-        <input
-          type="text"
-          id="reasonInput"
-          placeholder="Årsak, f.eks. bursdag, lønn, ren kakeplikt"
-          required
-        />
+          <input
+            type="text"
+            id="reasonInput"
+            placeholder="Årsak, f.eks. bursdag, lønn, ren kakeplikt"
+            required
+          />
+        </div>
 
-        <select id="cakeTypeInput" required>
-          <option value="">Velg kake</option>
-          <option value="Marsipankake">Marsipankake</option>
-          <option value="Sjokoladekake">Sjokoladekake</option>
-          <option value="Kladdkake">Kladdkake</option>
-          <option value="Sitronkake">Sitronkake</option>
-          <option value="Suksessterte">Suksessterte</option>
-          <option value="Ostekake">Ostekake</option>
-          <option value="Gulrotkake">Gulrotkake</option>
-          <option value="Pavlova">Pavlova</option>
-          <option value="Brownies">Brownies</option>
-          <option value="Annet">Annet</option>
-        </select>
+        <div class="cake-lines" id="cakeLines"></div>
 
-        <input
-          type="number"
-          id="amountInput"
-          min="1"
-          step="1"
-          value="1"
-          placeholder="Antall"
-          aria-label="Antall kaker"
-          required
-        />
+        <button class="secondary-button" id="addCakeLineButton" type="button">
+          Legg til kake
+        </button>
 
         <button type="submit">Registrer kake</button>
       </form>
@@ -489,6 +517,21 @@
 
     let cakes = [];
     let selectedYear = "2026";
+    let cakeLineCounter = 0;
+    let cakeLines = [];
+
+    const cakeTypeOptions = [
+      "Marsipankake",
+      "Sjokoladekake",
+      "Kladdkake",
+      "Sitronkake",
+      "Suksessterte",
+      "Ostekake",
+      "Gulrotkake",
+      "Pavlova",
+      "Brownies",
+      "Annet"
+    ];
 
     const barometerFill = document.getElementById("barometerFill");
     const scoreText = document.getElementById("scoreText");
@@ -505,11 +548,20 @@
     const cakeForm = document.getElementById("cakeForm");
     const dateInput = document.getElementById("dateInput");
     const reasonInput = document.getElementById("reasonInput");
-    const cakeTypeInput = document.getElementById("cakeTypeInput");
-    const amountInput = document.getElementById("amountInput");
+    const cakeLinesContainer = document.getElementById("cakeLines");
+    const addCakeLineButton = document.getElementById("addCakeLineButton");
     const yearTabs = document.querySelectorAll(".year-tab");
 
     dateInput.valueAsDate = new Date();
+
+    function createCakeLine() {
+      cakeLineCounter += 1;
+      return {
+        id: `cake-line-${cakeLineCounter}`,
+        type: "",
+        amount: 1
+      };
+    }
 
     function createId() {
       if (window.crypto && crypto.randomUUID) {
@@ -523,6 +575,87 @@
       const element = document.createElement("div");
       element.textContent = value;
       return element.innerHTML;
+    }
+
+    function renderCakeLines() {
+      cakeLinesContainer.innerHTML = "";
+
+      cakeLines.forEach((line) => {
+        const cakeLine = document.createElement("div");
+        cakeLine.className = "cake-line";
+        cakeLine.dataset.id = line.id;
+
+        const options = cakeTypeOptions
+          .map((option) => {
+            const selected = option === line.type ? "selected" : "";
+            return `<option value="${option}" ${selected}>${option}</option>`;
+          })
+          .join("");
+
+        cakeLine.innerHTML = `
+          <select class="cake-line-type" required>
+            <option value="">Velg kake</option>
+            ${options}
+          </select>
+
+          <input
+            class="cake-line-amount"
+            type="number"
+            min="1"
+            step="1"
+            value="${line.amount}"
+            placeholder="Antall"
+            aria-label="Antall kaker"
+            required
+          />
+
+          <button
+            class="remove-cake-line-button"
+            type="button"
+            aria-label="Fjern kake"
+            title="Fjern kake"
+          >
+            ×
+          </button>
+        `;
+
+        cakeLinesContainer.appendChild(cakeLine);
+      });
+
+      updateRemoveCakeLineButtons();
+    }
+
+    function updateCakeLine(id, updates) {
+      cakeLines = cakeLines.map((line) => {
+        if (line.id !== id) {
+          return line;
+        }
+
+        return {
+          ...line,
+          ...updates
+        };
+      });
+    }
+
+    function updateRemoveCakeLineButtons() {
+      const buttons = cakeLinesContainer.querySelectorAll(".remove-cake-line-button");
+
+      buttons.forEach((button) => {
+        button.disabled = cakeLines.length === 1;
+      });
+    }
+
+    function resetCakeLines() {
+      cakeLines = [createCakeLine()];
+      renderCakeLines();
+    }
+
+    function getCakeLinesForSubmit() {
+      return cakeLines.map((line) => ({
+        type: line.type.trim(),
+        amount: Math.max(1, Number(line.amount) || 1)
+      }));
     }
 
     async function loadCakes() {
@@ -560,21 +693,43 @@
       return type.toLowerCase().includes("ikke registrert");
     }
 
+    function getCakeTypes(cake) {
+      if (isUnknownCake(cake.type)) {
+        return [];
+      }
+
+      return cake.type
+        .split(/\s*,\s*|\s+og\s+/i)
+        .map((type) => type.trim())
+        .filter(Boolean);
+    }
+
+    function getCakeMultiplier(cake) {
+      return Math.max(1, Number(cake.amount) || 1);
+    }
+
+    function getCakeUnitCount(cake) {
+      return Math.max(1, getCakeTypes(cake).length) * getCakeMultiplier(cake);
+    }
+
+    function getMarzipanCount(cake) {
+      return getCakeTypes(cake)
+        .filter((type) => isMarzipanCake(type))
+        .length * getCakeMultiplier(cake);
+    }
+
+    function getNonMarzipanCount(cake) {
+      return getCakeTypes(cake)
+        .filter((type) => !isMarzipanCake(type))
+        .length * getCakeMultiplier(cake);
+    }
+
     function calculateBarometer() {
       let score = 50;
 
       getVisibleCakes().forEach((cake) => {
-        const amount = Number(cake.amount) || 1;
-
-        if (isUnknownCake(cake.type)) {
-          return;
-        }
-
-        if (isMarzipanCake(cake.type)) {
-          score -= 12 * amount;
-        } else {
-          score += 8 * amount;
-        }
+        score -= getMarzipanCount(cake) * 12;
+        score += getNonMarzipanCount(cake) * 8;
       });
 
       return Math.max(0, Math.min(100, score));
@@ -648,7 +803,7 @@
     }
 
     function getCakeAmount(cake) {
-      return Math.max(1, Number(cake.amount) || 1);
+      return getCakeUnitCount(cake);
     }
 
     function getTotalCakeAmount(cakeList = getVisibleCakes()) {
@@ -684,10 +839,18 @@
       const sortedCakes = [...visibleCakes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
       sortedCakes.forEach((cake) => {
-        const marzipan = isMarzipanCake(cake.type);
+        const marzipanCount = getMarzipanCount(cake);
+        const nonMarzipanCount = getNonMarzipanCount(cake);
         const unknown = isUnknownCake(cake.type);
-        const badgeClass = unknown ? "neutral" : marzipan ? "bad" : "good";
-        const badgeText = unknown ? "Ukjent" : marzipan ? "Iselin ned 📉" : "Iselin opp 📈";
+        const mixed = marzipanCount > 0 && nonMarzipanCount > 0;
+        const badgeClass = unknown ? "neutral" : mixed ? "mixed" : marzipanCount > 0 ? "bad" : "good";
+        const badgeText = unknown
+          ? "Ukjent"
+          : mixed
+            ? "Blandet effekt ↕"
+            : marzipanCount > 0
+              ? "Iselin ned 📉"
+              : "Iselin opp 📈";
 
         const row = document.createElement("tr");
 
@@ -755,9 +918,9 @@
     function renderDashboard() {
       const visibleCakes = getVisibleCakes();
       const total = getTotalCakeAmount(visibleCakes);
-      const marzipanAmount = visibleCakes
-        .filter((cake) => isMarzipanCake(cake.type))
-        .reduce((sum, cake) => sum + getCakeAmount(cake), 0);
+      const marzipanAmount = visibleCakes.reduce((sum, cake) => {
+        return sum + getMarzipanCount(cake);
+      }, 0);
 
       const score = calculateBarometer();
       const frequency = calculateCakeFrequency();
@@ -781,32 +944,78 @@
     cakeForm.addEventListener("submit", async function (event) {
       event.preventDefault();
 
-      const newCake = {
+      const selectedCakes = getCakeLinesForSubmit();
+
+      if (selectedCakes.some((cake) => !cake.type)) {
+        alert("Velg kaketype for alle kakelinjene.");
+        return;
+      }
+
+      const newCakes = selectedCakes.map((cake) => ({
         id: createId(),
         date: dateInput.value,
         reason: reasonInput.value,
-        type: cakeTypeInput.value,
-        amount: Math.max(1, Number(amountInput.value) || 1)
-      };
+        type: cake.type,
+        amount: cake.amount
+      }));
 
       try {
         const { error } = await supabaseClient
           .from("cakes")
-          .insert(newCake);
+          .insert(newCakes);
 
         if (error) {
           throw error;
         }
 
         reasonInput.value = "";
-        cakeTypeInput.value = "";
-        amountInput.value = "1";
+        resetCakeLines();
         dateInput.valueAsDate = new Date();
 
         await loadCakes();
       } catch (error) {
         alert(error.message);
       }
+    });
+
+    function handleCakeLineChange(event) {
+      const cakeLine = event.target.closest(".cake-line");
+
+      if (!cakeLine) {
+        return;
+      }
+
+      if (event.target.classList.contains("cake-line-type")) {
+        updateCakeLine(cakeLine.dataset.id, {
+          type: event.target.value
+        });
+      }
+
+      if (event.target.classList.contains("cake-line-amount")) {
+        updateCakeLine(cakeLine.dataset.id, {
+          amount: Math.max(1, Number(event.target.value) || 1)
+        });
+      }
+    }
+
+    cakeLinesContainer.addEventListener("input", handleCakeLineChange);
+    cakeLinesContainer.addEventListener("change", handleCakeLineChange);
+
+    cakeLinesContainer.addEventListener("click", function (event) {
+      const removeButton = event.target.closest(".remove-cake-line-button");
+
+      if (!removeButton || cakeLines.length === 1) {
+        return;
+      }
+
+      const cakeLine = removeButton.closest(".cake-line");
+      cakeLines = cakeLines.filter((line) => line.id !== cakeLine.dataset.id);
+      renderCakeLines();
+    });
+
+    addCakeLineButton.addEventListener("click", function () {
+      cakeLines.push(createCakeLine());
+      renderCakeLines();
     });
 
     yearTabs.forEach((tab) => {
@@ -820,6 +1029,8 @@
         renderDashboard();
       });
     });
+
+    resetCakeLines();
 
     loadCakes().catch((error) => {
       moodText.textContent = "Klarte ikke å laste kakeloggen.";
