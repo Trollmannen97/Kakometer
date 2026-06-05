@@ -192,6 +192,26 @@
       text-align: center;
     }
 
+    .year-tabs {
+      display: flex;
+      gap: 10px;
+      margin: 24px 0;
+    }
+
+    .year-tab {
+      background: #fff;
+      color: #2b1b2f;
+      border: 2px solid #e8c5df;
+      border-radius: 999px;
+      padding: 10px 18px;
+    }
+
+    .year-tab.active {
+      background: #2b1b2f;
+      color: white;
+      border-color: #2b1b2f;
+    }
+
     .form-card {
       margin-top: 24px;
     }
@@ -308,6 +328,11 @@
       color: #b0003a;
     }
 
+    .neutral {
+      background: #ece7ef;
+      color: #5d3264;
+    }
+
     .mini-text {
       font-size: 0.85rem;
       opacity: 0.7;
@@ -362,6 +387,11 @@
       </div>
     </section>
 
+    <nav class="year-tabs" aria-label="Velg år">
+      <button class="year-tab active" type="button" data-year="2026">2026</button>
+      <button class="year-tab" type="button" data-year="2025">2025</button>
+    </nav>
+
     <section class="stats">
       <div class="stat-box">
         <div class="stat-number" id="totalCakes">0</div>
@@ -378,6 +408,25 @@
         <div class="stat-label">dager per kake</div>
       </div>
 
+    </section>
+
+    <section class="card table-card">
+      <h2>Kakelogg</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Dato</th>
+            <th>Årsak</th>
+            <th>Kake</th>
+            <th>Antall</th>
+            <th>Effekt på Iselin</th>
+            <th>Slett</th>
+          </tr>
+        </thead>
+
+        <tbody id="cakeTableBody"></tbody>
+      </table>
     </section>
 
     <section class="card form-card">
@@ -398,6 +447,8 @@
           <option value="Marsipankake">Marsipankake</option>
           <option value="Sjokoladekake">Sjokoladekake</option>
           <option value="Kladdkake">Kladdkake</option>
+          <option value="Sitronkake">Sitronkake</option>
+          <option value="Suksessterte">Suksessterte</option>
           <option value="Ostekake">Ostekake</option>
           <option value="Gulrotkake">Gulrotkake</option>
           <option value="Pavlova">Pavlova</option>
@@ -423,25 +474,6 @@
         Data lagres i Supabase, slik at flere kan bruke samme kakelogg.
       </p>
     </section>
-
-    <section class="card table-card">
-      <h2>Kakelogg</h2>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Dato</th>
-            <th>Årsak</th>
-            <th>Kake</th>
-            <th>Antall</th>
-            <th>Effekt på Iselin</th>
-            <th>Slett</th>
-          </tr>
-        </thead>
-
-        <tbody id="cakeTableBody"></tbody>
-      </table>
-    </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -456,6 +488,7 @@
       : null;
 
     let cakes = [];
+    let selectedYear = "2026";
 
     const barometerFill = document.getElementById("barometerFill");
     const scoreText = document.getElementById("scoreText");
@@ -474,6 +507,7 @@
     const reasonInput = document.getElementById("reasonInput");
     const cakeTypeInput = document.getElementById("cakeTypeInput");
     const amountInput = document.getElementById("amountInput");
+    const yearTabs = document.querySelectorAll(".year-tab");
 
     dateInput.valueAsDate = new Date();
 
@@ -514,15 +548,27 @@
       renderDashboard();
     }
 
+    function getVisibleCakes() {
+      return cakes.filter((cake) => cake.date.startsWith(selectedYear));
+    }
+
     function isMarzipanCake(type) {
       return type.toLowerCase().includes("marsipan");
+    }
+
+    function isUnknownCake(type) {
+      return type.toLowerCase().includes("ikke registrert");
     }
 
     function calculateBarometer() {
       let score = 50;
 
-      cakes.forEach((cake) => {
+      getVisibleCakes().forEach((cake) => {
         const amount = Number(cake.amount) || 1;
+
+        if (isUnknownCake(cake.type)) {
+          return;
+        }
 
         if (isMarzipanCake(cake.type)) {
           score -= 12 * amount;
@@ -580,12 +626,13 @@
 
     function calculateCakeFrequency() {
       const totalAmount = getTotalCakeAmount();
+      const visibleCakes = getVisibleCakes();
 
-      if (totalAmount < 2 || cakes.length < 2) {
+      if (totalAmount < 2 || visibleCakes.length < 2) {
         return "-";
       }
 
-      const sortedDates = cakes
+      const sortedDates = visibleCakes
         .map((cake) => new Date(cake.date))
         .sort((a, b) => a - b);
 
@@ -604,8 +651,8 @@
       return Math.max(1, Number(cake.amount) || 1);
     }
 
-    function getTotalCakeAmount() {
-      return cakes.reduce((sum, cake) => sum + getCakeAmount(cake), 0);
+    function getTotalCakeAmount(cakeList = getVisibleCakes()) {
+      return cakeList.reduce((sum, cake) => sum + getCakeAmount(cake), 0);
     }
 
     function formatDate(dateString) {
@@ -620,12 +667,13 @@
 
     function renderTable() {
       cakeTableBody.innerHTML = "";
+      const visibleCakes = getVisibleCakes();
 
-      if (cakes.length === 0) {
+      if (visibleCakes.length === 0) {
         cakeTableBody.innerHTML = `
           <tr>
             <td colspan="6" class="empty-state">
-              Ingen kaker registrert. Dette er dramatisk.
+              Ingen kaker registrert for ${selectedYear}. Dette er dramatisk.
             </td>
           </tr>
         `;
@@ -633,10 +681,13 @@
         return;
       }
 
-      const sortedCakes = [...cakes].sort((a, b) => new Date(b.date) - new Date(a.date));
+      const sortedCakes = [...visibleCakes].sort((a, b) => new Date(b.date) - new Date(a.date));
 
       sortedCakes.forEach((cake) => {
         const marzipan = isMarzipanCake(cake.type);
+        const unknown = isUnknownCake(cake.type);
+        const badgeClass = unknown ? "neutral" : marzipan ? "bad" : "good";
+        const badgeText = unknown ? "Ukjent" : marzipan ? "Iselin ned 📉" : "Iselin opp 📈";
 
         const row = document.createElement("tr");
 
@@ -646,8 +697,8 @@
           <td>${escapeHtml(cake.type)}</td>
           <td>${getCakeAmount(cake)}</td>
           <td>
-            <span class="badge ${marzipan ? "bad" : "good"}">
-              ${marzipan ? "Iselin ned 📉" : "Iselin opp 📈"}
+            <span class="badge ${badgeClass}">
+              ${badgeText}
             </span>
           </td>
           <td>
@@ -702,8 +753,9 @@
     }
 
     function renderDashboard() {
-      const total = getTotalCakeAmount();
-      const marzipanAmount = cakes
+      const visibleCakes = getVisibleCakes();
+      const total = getTotalCakeAmount(visibleCakes);
+      const marzipanAmount = visibleCakes
         .filter((cake) => isMarzipanCake(cake.type))
         .reduce((sum, cake) => sum + getCakeAmount(cake), 0);
 
@@ -755,6 +807,18 @@
       } catch (error) {
         alert(error.message);
       }
+    });
+
+    yearTabs.forEach((tab) => {
+      tab.addEventListener("click", function () {
+        selectedYear = this.dataset.year;
+
+        yearTabs.forEach((yearTab) => {
+          yearTab.classList.toggle("active", yearTab === this);
+        });
+
+        renderDashboard();
+      });
     });
 
     loadCakes().catch((error) => {
