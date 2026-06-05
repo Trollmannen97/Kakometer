@@ -445,7 +445,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
+  <script src="config.js" onerror="window.KAKOMETER_CONFIG_LOAD_FAILED = true"></script>
 
   <script>
     const SUPABASE_URL = window.KAKOMETER_CONFIG?.SUPABASE_URL || "";
@@ -492,6 +492,10 @@
     }
 
     async function loadCakes() {
+      if (window.KAKOMETER_CONFIG_LOAD_FAILED) {
+        throw new Error("config.js mangler. Sjekk at GitHub Pages publiseres fra GitHub Actions.");
+      }
+
       if (!supabaseClient) {
         throw new Error("Supabase URL og anon key mangler. Kjør build-config eller sjekk GitHub Secrets.");
       }
@@ -754,6 +758,9 @@
     });
 
     loadCakes().catch((error) => {
+      moodText.textContent = "Klarte ikke å laste kakeloggen.";
+      quoteText.textContent = error.message;
+
       cakeTableBody.innerHTML = `
         <tr>
           <td colspan="6" class="empty-state">
