@@ -419,10 +419,6 @@
         <button type="submit">Registrer kake</button>
       </form>
 
-      <button class="danger-button" id="resetButton">
-        Nullstill testdata
-      </button>
-
       <p class="mini-text">
         Data lagres i Supabase, slik at flere kan bruke samme kakelogg.
       </p>
@@ -459,51 +455,6 @@
       ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
       : null;
 
-    const defaultCakeData = [
-      {
-        id: "cake-1",
-        date: "2026-01-30",
-        reason: "Martin på Outlet slutter",
-        type: "Marsipankake",
-        amount: 1
-      },
-      {
-        id: "cake-2",
-        date: "2026-02-26",
-        reason: "Bursdag",
-        type: "Sjokoladekake",
-        amount: 1
-      },
-      {
-        id: "cake-3",
-        date: "2026-05-11",
-        reason: "Sebastian 30 år",
-        type: "Marsipankake",
-        amount: 1
-      },
-      {
-        id: "cake-4",
-        date: "2026-05-19",
-        reason: "Rester fra Mattias 17. mai",
-        type: "Kladdkake",
-        amount: 1
-      },
-      {
-        id: "cake-5",
-        date: "2026-05-29",
-        reason: "Bastian 30 år",
-        type: "Marsipankake",
-        amount: 1
-      },
-      {
-        id: "cake-6",
-        date: "2026-06-08",
-        reason: "Magnus fagbrev",
-        type: "Sjokoladekake",
-        amount: 1
-      }
-    ];
-
     let cakes = [];
 
     const barometerFill = document.getElementById("barometerFill");
@@ -523,7 +474,6 @@
     const reasonInput = document.getElementById("reasonInput");
     const cakeTypeInput = document.getElementById("cakeTypeInput");
     const amountInput = document.getElementById("amountInput");
-    const resetButton = document.getElementById("resetButton");
 
     dateInput.valueAsDate = new Date();
 
@@ -796,39 +746,6 @@
         cakeTypeInput.value = "";
         amountInput.value = "1";
         dateInput.valueAsDate = new Date();
-
-        await loadCakes();
-      } catch (error) {
-        alert(error.message);
-      }
-    });
-
-    resetButton.addEventListener("click", async function () {
-      const confirmReset = confirm(
-        "Vil du nullstille testdata og gå tilbake til startdata?"
-      );
-
-      if (!confirmReset) {
-        return;
-      }
-
-      try {
-        const { error: deleteError } = await supabaseClient
-          .from("cakes")
-          .delete()
-          .neq("id", "");
-
-        if (deleteError) {
-          throw deleteError;
-        }
-
-        const { error: insertError } = await supabaseClient
-          .from("cakes")
-          .insert(defaultCakeData);
-
-        if (insertError) {
-          throw insertError;
-        }
 
         await loadCakes();
       } catch (error) {
