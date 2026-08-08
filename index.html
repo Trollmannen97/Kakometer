@@ -181,6 +181,49 @@
       font-size: 0.9rem;
     }
 
+    .insights {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .insight-card {
+      background: rgba(255, 255, 255, 0.85);
+      border: 2px solid rgba(255, 255, 255, 0.95);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: 0 14px 34px rgba(120, 61, 120, 0.12);
+    }
+
+    .insight-label {
+      color: #5d3264;
+      font-size: 0.78rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .insight-value {
+      margin-top: 8px;
+      font-size: 1.08rem;
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .insight-detail {
+      margin-top: 8px;
+      color: #5d3264;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 950px) {
+      .insights {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     .quote {
       margin-top: 18px;
       background: #2b1b2f;
@@ -386,6 +429,22 @@
       margin-top: 12px;
     }
 
+    .form-feedback {
+      display: none;
+      margin-top: 14px;
+      background: #d8f8d8;
+      color: #167a16;
+      border: 2px solid #b5eeb5;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font-weight: 800;
+      line-height: 1.35;
+    }
+
+    .form-feedback.visible {
+      display: block;
+    }
+
     .empty-state {
       text-align: center;
       padding: 24px;
@@ -464,7 +523,18 @@
         margin-top: 20px;
       }
 
+      .insights {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-top: 20px;
+      }
+
       .stat-box {
+        border-radius: 18px;
+        padding: 16px;
+      }
+
+      .insight-card {
         border-radius: 18px;
         padding: 16px;
       }
@@ -569,6 +639,10 @@
         grid-template-columns: 1fr;
       }
 
+      .insights {
+        grid-template-columns: 1fr;
+      }
+
       .year-tabs {
         grid-template-columns: 1fr;
       }
@@ -647,6 +721,32 @@
 
     </section>
 
+    <section class="insights" aria-label="Kakeinnsikt">
+      <article class="insight-card">
+        <div class="insight-label">Siste kake</div>
+        <div class="insight-value" id="latestCakeValue">Ingen ennå</div>
+        <div class="insight-detail" id="latestCakeDetail">Kakeloggen venter på første registrering.</div>
+      </article>
+
+      <article class="insight-card">
+        <div class="insight-label">Denne måneden</div>
+        <div class="insight-value" id="monthStatusValue">0 kaker</div>
+        <div class="insight-detail" id="monthStatusDetail">Ingen ferske kakedata.</div>
+      </article>
+
+      <article class="insight-card">
+        <div class="insight-label">Beste valg</div>
+        <div class="insight-value" id="bestCakeValue">Ikke nok data</div>
+        <div class="insight-detail" id="bestCakeDetail">Registrer flere kaker for å se mønsteret.</div>
+      </article>
+
+      <article class="insight-card">
+        <div class="insight-label">Risikosone</div>
+        <div class="insight-value" id="riskCakeValue">Ikke nok data</div>
+        <div class="insight-detail" id="riskCakeDetail">Marsipanradaren er ikke kalibrert ennå.</div>
+      </article>
+    </section>
+
     <section class="card table-card">
       <h2>Kakelogg</h2>
 
@@ -693,6 +793,8 @@
       <p class="mini-text">
         Data lagres via API-et, slik at flere kan bruke samme kakelogg.
       </p>
+
+      <div class="form-feedback" id="formFeedback" role="status" aria-live="polite"></div>
     </section>
   </div>
 
@@ -725,6 +827,14 @@
     const totalCakes = document.getElementById("totalCakes");
     const marzipanCount = document.getElementById("marzipanCount");
     const cakeFrequency = document.getElementById("cakeFrequency");
+    const latestCakeValue = document.getElementById("latestCakeValue");
+    const latestCakeDetail = document.getElementById("latestCakeDetail");
+    const monthStatusValue = document.getElementById("monthStatusValue");
+    const monthStatusDetail = document.getElementById("monthStatusDetail");
+    const bestCakeValue = document.getElementById("bestCakeValue");
+    const bestCakeDetail = document.getElementById("bestCakeDetail");
+    const riskCakeValue = document.getElementById("riskCakeValue");
+    const riskCakeDetail = document.getElementById("riskCakeDetail");
     const cakeTableBody = document.getElementById("cakeTableBody");
 
     const cakeForm = document.getElementById("cakeForm");
@@ -732,6 +842,7 @@
     const reasonInput = document.getElementById("reasonInput");
     const cakeLinesContainer = document.getElementById("cakeLines");
     const addCakeLineButton = document.getElementById("addCakeLineButton");
+    const formFeedback = document.getElementById("formFeedback");
     const yearTabs = document.querySelectorAll(".year-tab");
 
     dateInput.valueAsDate = new Date();
@@ -992,6 +1103,25 @@
       return cakeList.reduce((sum, cake) => sum + getCakeAmount(cake), 0);
     }
 
+    function getCakeEffectLabel(cake) {
+      const marzipanAmount = getMarzipanCount(cake);
+      const nonMarzipanAmount = getNonMarzipanCount(cake);
+
+      if (isUnknownCake(cake.type)) {
+        return "ukjent effekt";
+      }
+
+      if (marzipanAmount > 0 && nonMarzipanAmount > 0) {
+        return "blandet effekt";
+      }
+
+      if (marzipanAmount > 0) {
+        return "Iselin ned";
+      }
+
+      return "Iselin opp";
+    }
+
     function formatDate(dateString) {
       const date = new Date(dateString);
 
@@ -1000,6 +1130,119 @@
         month: "2-digit",
         year: "numeric"
       });
+    }
+
+    function formatMonthName(dateString) {
+      const date = new Date(dateString);
+
+      return date.toLocaleDateString("no-NO", {
+        month: "long"
+      });
+    }
+
+    function getSortedCakes(cakeList) {
+      return [...cakeList].sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+
+    function getCakeTypeStats(cakeList) {
+      const stats = new Map();
+
+      cakeList.forEach((cake) => {
+        getCakeTypes(cake).forEach((type) => {
+          const amount = getCakeMultiplier(cake);
+          const current = stats.get(type) || {
+            type,
+            amount: 0,
+            marzipanAmount: 0,
+            nonMarzipanAmount: 0
+          };
+
+          current.amount += amount;
+
+          if (isMarzipanCake(type)) {
+            current.marzipanAmount += amount;
+          } else {
+            current.nonMarzipanAmount += amount;
+          }
+
+          stats.set(type, current);
+        });
+      });
+
+      return [...stats.values()];
+    }
+
+    function renderInsights(visibleCakes, total, marzipanAmount) {
+      const sortedCakes = getSortedCakes(visibleCakes);
+      const latestCake = sortedCakes[0];
+
+      if (latestCake) {
+        latestCakeValue.textContent = latestCake.type;
+        latestCakeDetail.textContent = `${formatDate(latestCake.date)} · ${getCakeEffectLabel(latestCake)} · ${latestCake.reason}`;
+      } else {
+        latestCakeValue.textContent = "Ingen ennå";
+        latestCakeDetail.textContent = "Kakeloggen venter på første registrering.";
+      }
+
+      const today = new Date();
+      const currentMonthKey = `${selectedYear}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+      const monthCakes = visibleCakes.filter((cake) => cake.date.startsWith(currentMonthKey));
+      const monthTotal = getTotalCakeAmount(monthCakes);
+      const monthMarzipan = monthCakes.reduce((sum, cake) => sum + getMarzipanCount(cake), 0);
+      const monthName = formatMonthName(`${currentMonthKey}-01`);
+      const monthMarzipanPercent = monthTotal === 0
+        ? 0
+        : Math.round((monthMarzipan / monthTotal) * 100);
+
+      monthStatusValue.textContent = `${monthTotal} ${monthTotal === 1 ? "kake" : "kaker"}`;
+      monthStatusDetail.textContent = monthTotal === 0
+        ? `${monthName}: ingen registreringer ennå.`
+        : `${monthName}: ${monthMarzipanPercent}% marsipanandel.`;
+
+      const typeStats = getCakeTypeStats(visibleCakes);
+      const bestCake = typeStats
+        .filter((stat) => stat.nonMarzipanAmount > 0)
+        .sort((a, b) => b.nonMarzipanAmount - a.nonMarzipanAmount || a.type.localeCompare(b.type, "no"))[0];
+      const riskCake = typeStats
+        .filter((stat) => stat.marzipanAmount > 0)
+        .sort((a, b) => b.marzipanAmount - a.marzipanAmount || a.type.localeCompare(b.type, "no"))[0];
+      const marzipanPercent = total === 0
+        ? 0
+        : Math.round((marzipanAmount / total) * 100);
+
+      if (bestCake) {
+        bestCakeValue.textContent = bestCake.type;
+        bestCakeDetail.textContent = `${bestCake.nonMarzipanAmount} positive registreringer for Iselin.`;
+      } else {
+        bestCakeValue.textContent = "Ikke nok data";
+        bestCakeDetail.textContent = "Registrer en ikke-marsipankake for å få en favoritt.";
+      }
+
+      if (riskCake) {
+        riskCakeValue.textContent = riskCake.type;
+        riskCakeDetail.textContent = `${riskCake.marzipanAmount} treff på marsipanradaren · ${marzipanPercent}% av totalen.`;
+      } else {
+        riskCakeValue.textContent = "Ingen marsipanfare";
+        riskCakeDetail.textContent = total === 0
+          ? "Marsipanradaren er ikke kalibrert ennå."
+          : "Foreløpig ingen registrert marsipanskade.";
+      }
+    }
+
+    function getSubmitFeedback(newCakes) {
+      const total = getTotalCakeAmount(newCakes);
+      const marzipanAmount = newCakes.reduce((sum, cake) => sum + getMarzipanCount(cake), 0);
+      const cakeNames = newCakes.map((cake) => cake.type).join(", ");
+
+      if (marzipanAmount === total) {
+        return `${cakeNames} registrert. Marsipanrisikoen er dokumentert.`;
+      }
+
+      if (marzipanAmount > 0) {
+        return `${cakeNames} registrert. Blandet effekt, men statistikken er oppdatert.`;
+      }
+
+      return `${cakeNames} registrert. Iselin-balansen styrket.`;
     }
 
     function renderTable() {
@@ -1114,6 +1357,7 @@
       cakeEmoji.style.setProperty("--cake-scale", cakeScale);
       cakeNote.textContent = `Kontorkaken er nå ${cakeScale.toFixed(2)}x større enn ved start. Dette er vitenskapelig nok.`;
 
+      renderInsights(visibleCakes, total, marzipanAmount);
       renderTable();
     }
 
@@ -1144,6 +1388,8 @@
         reasonInput.value = "";
         resetCakeLines();
         dateInput.valueAsDate = new Date();
+        formFeedback.textContent = getSubmitFeedback(newCakes);
+        formFeedback.classList.add("visible");
 
         await loadCakes();
       } catch (error) {
